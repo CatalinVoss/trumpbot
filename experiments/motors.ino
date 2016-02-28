@@ -1,5 +1,3 @@
-
-
 /*************************************************************
   File:      ME_210 motor drive
   Contents:  This program controls DC motor(S) with an H bridge, specifically by sending 
