@@ -29,7 +29,7 @@ Ultrasonic ultra_right(ULTRASONIC_T,ULTRASONIC_RIGHT_E);
 Ultrasonic ultra_back(ULTRASONIC_T,ULTRASONIC_BACK_E);
 
 // Servos
-Servo servo_arms
+Servo servo_arms;
 
 #pragma mark -
 #pragma mark Helpers
