@@ -4,18 +4,20 @@
 
 #include <Ultrasonic.h> // From ultrasonic library at http://wiki.tetrasys-design.net/HCSR04Ultrasonic
 #include <Timers.h>     // From ME 210
+#include <Servo.h>      // Standard arduino library
 #include "line_sensor.hpp"
 
 // Pin Layout
-#define MOTOR1 5   // Front
-#define MOTOR2 6   // Right
-#define MOTOR3 9   // Back
-#define MOTOR4 10  // Left
-#define MOTOR_EN 4 // Enable
-#define ULTRASONIC_RIGHT_T 13 // echo
-#define ULTRASONIC_RIGHT_E 12
-#define ULTRASONIC_BACK_T  8 // TODO: set this
-#define ULTRASONIC_BACK_E  7 // TODO: set this
+#define MOTOR1              5   // Motor Front
+#define MOTOR2              6   // Motor Right
+#define MOTOR3              9   // Motor Back
+#define MOTOR4              10  // Motor Left
+#define MOTOR_EN            4   // Motor Enable
+#define ULTRASONIC_T        13  // Same trigger for both sensors
+#define ULTRASONIC_RIGHT_E  12
+#define ULTRASONIC_BACK_E   7
+#define SERVO_ARMS          3   // Both arm servos connected here
+#define SERVO_PLATE         11  // Lifter servo
 
 // Speed compensation
 #define MOTOR1_SPEED_COMP 1.0
@@ -23,8 +25,11 @@
 #define MOTOR3_SPEED_COMP 1.0
 #define MOTOR4_SPEED_COMP 1.0
 
-Ultrasonic ultra_right(ULTRASONIC_RIGHT_E,ULTRASONIC_RIGHT_T); // TODO: check
-Ultrasonic ultra_back(ULTRASONIC_BACK_E,ULTRASONIC_BACK_T); // TODO: check
+Ultrasonic ultra_right(ULTRASONIC_T,ULTRASONIC_RIGHT_E);
+Ultrasonic ultra_back(ULTRASONIC_T,ULTRASONIC_BACK_E);
+
+// Servos
+Servo servo_arms
 
 #pragma mark -
 #pragma mark Helpers
@@ -93,8 +98,12 @@ void setup() {
 // Main loop code
 void loop() {
   // Drive forward
-  drive_motor(MOTOR2, 1, true);
-  drive_motor(MOTOR4, 1, true);
+//  drive_motor(MOTOR2, 0.5, false);
+//  drive_motor(MOTOR4, 0.5, false  );
+
+
+  drive_motor(MOTOR1, 0.2, false);
+  drive_motor(MOTOR3, 0.2, false  );
 
 //  // Drive backward
 //  drive_motor(MOTOR2, 1, false);
