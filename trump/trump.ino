@@ -17,7 +17,7 @@
 #define ULTRASONIC_RIGHT_E  12
 #define ULTRASONIC_BACK_E   7
 #define SERVO_ARMS          3   // Both arm servos connected here
-#define SERVO_PLATE         11  // Lifter servo
+#define SERVO_LIFTER        11  // Lifter servo
 
 // Speed compensation
 #define MOTOR1_SPEED_COMP 1.0
@@ -30,6 +30,7 @@ Ultrasonic ultra_back(ULTRASONIC_T,ULTRASONIC_BACK_E);
 
 // Servos
 Servo servo_arms;
+Servo servo_lifter;
 
 #pragma mark -
 #pragma mark Helpers
@@ -87,9 +88,13 @@ void setup() {
   pinMode(MOTOR3, OUTPUT);
   pinMode(MOTOR4, OUTPUT);
 
-  // Enable all motors stopped
+  // Enable all motors, stopped
   digitalWrite(MOTOR_EN, HIGH);
   stop_all();
+
+  // Init servos
+  servo_arms.attach(SERVO_ARMS);
+  servo_lifter.attach(SERVO_LIFTER);
 }
 
 #pragma mark -
@@ -102,11 +107,22 @@ void loop() {
 //  drive_motor(MOTOR4, 0.5, false  );
 
 
-  drive_motor(MOTOR1, 0.2, false);
+  drive_motor(MOTOR1, 0.3, false);
   drive_motor(MOTOR3, 0.2, false  );
 
 //  // Drive backward
 //  drive_motor(MOTOR2, 1, false);
 //  drive_motor(MOTOR4, 1, false);
+
+//
+//  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+//    // in steps of 1 degree
+//    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+//    delay(15);                       // waits 15ms for the servo to reach the position
+//  }
+//  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+//    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+//    delay(15);                       // waits 15ms for the servo to reach the position
+//  }
 }
 
