@@ -157,6 +157,7 @@ void loop() {
 
   // TODO: perhaps check these at a lower interval
   int back_dist = ultra_back.ping() / US_ROUNDTRIP_CM;
+  delay(10); // This is crucial! Triggering them 1 by 1 otherwise causes interference. The alternative is NOT to share the trigger pin or 
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
 #ifdef VERBOSE
