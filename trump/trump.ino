@@ -30,8 +30,14 @@
 #define ULTRASONIC_RIGHT_E  12
 #define ULTRASONIC_BACK_E   7
 
+//#define ULTRASONIC_BACK_T   13  // We COULD use the same trigger pin for both sensors or use the same input PIN for both with a logical OR in between
+//#define ULTRASONIC_RIGHT_T  2
+//#define ULTRASONIC_RIGHT_E  12
+//#define ULTRASONIC_BACK_E   7
+
+
 // Contact Sensors
-#define CONTACT_BACK_L      2
+#define CONTACT_BACK_L      A5
 #define CONTACT_BACK_R      A3
 #define CONTACT_RIGHT       A4
 
@@ -46,8 +52,9 @@
 #define MOTOR3_SPEED_COMP 1.0
 #define MOTOR4_SPEED_COMP 1.0
 
-NewPing ultra_right(ULTRASONIC_T,ULTRASONIC_RIGHT_E);
-NewPing ultra_back(ULTRASONIC_T, ULTRASONIC_BACK_E);
+#define MAX_DISTANCE 400 // in cm
+NewPing ultra_right(ULTRASONIC_T,ULTRASONIC_RIGHT_E, MAX_DISTANCE);
+NewPing ultra_back(ULTRASONIC_T, ULTRASONIC_BACK_E, MAX_DISTANCE);
 
 // Servos
 Servo servo_arms;
@@ -87,19 +94,25 @@ void drive_motor(int motor, float speed, bool forward) {
   analogWrite(motor, duty*PWM_RANGE); 
 }
 
+// Keep turning the robot
+void spin() {
+  
+}
+
 // Servo Position Constants
 // in degrees
 #define ARMS_REST_POS      0// TODO set this before turning on!
 #define ARMS_UNLOAD_POS    0// TODO set this before turning on!
-#define LIFTER_REST_POS    0// TODO set this before turning on!
-#define LIFTER_UNLOAD_POS  0// TODO set this before turning on!
+#define LIFTER_REST_POS    45// TODO set this before turning on!
+#define LIFTER_UNLOAD_POS  110// TODO set this before turning on!
 
-#define UNLOAD_TIME 100 // in ms
+#define UNLOAD_TIME 2000 // in ms
 
 // Resets arms into position to receive chip load
 void reset_loader() {
   servo_lifter.write(LIFTER_REST_POS);
   servo_arms.write(ARMS_REST_POS);
+  delay(1000); // TODO: why do we need this
   // TODO: move to starting position
 }
 
@@ -143,7 +156,7 @@ void setup() {
   // Init servos
   servo_arms.attach(SERVO_ARMS);
   servo_lifter.attach(SERVO_LIFTER);
-//  reset_loader(); // TODO: comment in
+  reset_loader(); // TODO: comment in
 }
 
 #pragma mark -
@@ -151,23 +164,25 @@ void setup() {
 
 // Main loop code
 void loop() {
+  unload();
+
+  
   // Drive forward
-  drive_motor(MOTOR1, 0.9, false);
-  drive_motor(MOTOR4, 0.1, false);
+//  drive_motor(MOTOR2, 0.3, false);
+//  drive_motor(MOTOR4, 0.3, false);
 
   // TODO: perhaps check these at a lower interval
   int back_dist = ultra_back.ping() / US_ROUNDTRIP_CM;
   delay(10); // This is crucial! Triggering them 1 by 1 otherwise causes interference. The alternative is NOT to share the trigger pin or 
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
-#ifdef VERBOSE
-  Serial.print("Right ultrasonic: ");
-  Serial.print(right_dist);   
-  Serial.println(" cm");
-  Serial.print("Back ultrasonic: ");
-  Serial.print(back_dist);   
-  Serial.println(" cm");
-#endif
+//#ifdef VERBOSE
+//  Serial.print("Right ultrasonic: ");
+//  Serial.print(right_dist);
+//  Serial.print(" cm, Back ultrasonic: ");
+//  Serial.print(back_dist);
+//  Serial.println(" cm");
+//#endif
 
 //  drive_motor(MOTOR1, 0.2, false);
 //  drive_motor(MOTOR3, 0.2, false);
