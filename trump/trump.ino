@@ -32,7 +32,7 @@
 #define ULTRASONIC_BACK_E   7
 
 // Contact Sensors
-#define CONTACT_BACK_L      A5
+#define CONTACT_BACK_L      8
 #define CONTACT_BACK_R      A3
 #define CONTACT_RIGHT       A4
 
@@ -57,6 +57,25 @@ NewPing ultra_back(ULTRASONIC_T, ULTRASONIC_BACK_E, MAX_DISTANCE);
 Servo servo_arm_l;
 Servo servo_arm_r;
 Servo servo_lifter;
+
+#pragma mark -
+#pragma mark States
+
+enum state {
+  starting,
+  unloading_chips,
+  driving_to_base,
+  driving_to_buckets
+};
+
+state current_state;
+
+#pragma mark -
+#pragma mark Tape sensors
+
+//bool check_tape_l() {
+//  
+//}
 
 #pragma mark -
 #pragma mark Helpers
@@ -107,9 +126,9 @@ void spin() {
 #define LIFTER_UNLOAD_POS  110
 // Speed-controlled
 #define ARM_L_REST_POS     0
-#define ARM_R_REST_POS     0
-#define ARM_L_UNLOAD_POS   50
-#define ARM_R_UNLOAD_POS   50
+#define ARM_R_REST_POS     120
+#define ARM_L_UNLOAD_POS   120
+#define ARM_R_UNLOAD_POS   0//250 // -110//
 #define UNLOAD_TIME 800 // in ms
 #define SERVO_DELAY 500
 
@@ -177,6 +196,9 @@ void setup() {
   servo_arm_r.attach(SERVO_ARM_R);
   servo_lifter.attach(SERVO_LIFTER);
   reset_loader();
+
+  // Start state machine
+  current_state = starting;
 }
 
 #pragma mark -
@@ -197,8 +219,6 @@ void loop() {
   delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
-
-
 //  drive_motor(MOTOR1, 0.2, false);
 //  drive_motor(MOTOR3, 0.2, false);
 //  // Drive backward
@@ -208,13 +228,15 @@ void loop() {
 //  drive_motor(MOTOR2, 0.3, false);
 //  drive_motor(MOTOR4, 0.3, false);
 
-  delay(MAIN_LOOP_DELAY);
 #ifdef VERBOSE
-  Serial.print("Right ultrasonic: ");
-  Serial.print(right_dist);
-  Serial.print(" cm, Back ultrasonic: ");
-  Serial.print(back_dist);
-  Serial.println(" cm");
+  Serial.println(analogRead(TAPE_L)); // this is doing *something*
+  
+//  Serial.print("Right ultrasonic: ");
+//  Serial.print(right_dist);
+//  Serial.print(" cm, Back ultrasonic: ");
+//  Serial.print(back_dist);
+//  Serial.println(" cm");
 #endif
+  delay(MAIN_LOOP_DELAY);
 }
 
