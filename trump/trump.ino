@@ -53,13 +53,7 @@ NewPing ultra_back(ULTRASONIC_T, ULTRASONIC_BACK_E, MAX_DISTANCE);
 
 // Servos
 // Note that these are controlled differently!
-// The lifter is controlled by setting a fixed angle like
-//    servo_lifter.write(angle);
-// while the arm-servos are controlled via speed and time like
-//    servo_arms.write(speed);
-//    delay(time);
-// where speed = 0 is full speed one direction, = 90 is neutral, and = 180 is full speed the other direction
-// per tutorial @ http://www.foxytronics.com/learn/microcontrollers/arduino/how-to-use-continuous-rotation-servos-with-arduino/programming
+// These servos are now all angle-controlled
 Servo servo_arm_l;
 Servo servo_arm_r;
 Servo servo_lifter;
@@ -106,33 +100,19 @@ void spin() {
 // Servo Position Constants
 // Angle-controlled
 #define LIFTER_REST_POS    45
+#define LIFTER_MID_POS     60
 #define LIFTER_UNLOAD_POS  110
 // Speed-controlled
-//#define ARMS_SPEED 45 
-//#define ARMS_TIME 400 // in ms
+#define ARM_L_REST_POS     0
+#define ARM_R_REST_POS     0
+#define ARM_L_UNLOAD_POS   50
+#define ARM_R_UNLOAD_POS   50
 #define UNLOAD_TIME 2000 // in ms
-
-// Speed from 0 to 1
-void move_arms(float s, int t, bool backwards) {
-  // 0 is full speed one direction, 90 is neutral, and 180 is full speed the other direction
-  delay(100);
-  if (backwards) {
-     servo_arm_l.write(90*(1.0-s));
-     servo_arm_r.write(90*s+90);
-  } else {
-     servo_arm_r.write(90*(1.0-s));
-     servo_arm_l.write(90*s+90);
-  }
-  delay(t);
-  servo_arm_r.write(90); // stop
-  servo_arm_l.write(90); // stop
-  delay(100);
-}
 
 // Resets lifter into position to receive chip load
 void reset_loader() {
-  // Stop moving arms
-  move_arms(0,0,true);
+  servo_arm_l.write(ARM_L_REST_POS);
+  servo_arm_r.write(ARM_R_REST_POS);
   servo_lifter.write(LIFTER_REST_POS);
   delay(500); // give the servo time to move to starting position
 }
@@ -140,13 +120,15 @@ void reset_loader() {
 // Unloads arms (blocking code)
 void unload() {
   Serial.println("Opening arms");
-  move_arms(0.1, 600, false);
-  Serial.println("Lifting plate");
+  servo_lifter.write(LIFTER_MID_POS);
+  delay(300);
+  servo_arm_l.write(ARM_L_UNLOAD_POS);
+  servo_arm_r.write(ARM_R_UNLOAD_POS);
+  delay(300);
   servo_lifter.write(LIFTER_UNLOAD_POS);
   delay(UNLOAD_TIME);
   Serial.println("Closing arms");
-  servo_lifter.write(LIFTER_REST_POS);
-  move_arms(0.1, 600, true); // 250
+  reset_loader();
 }
 
 void stop_all() {
