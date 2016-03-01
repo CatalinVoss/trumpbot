@@ -3,9 +3,12 @@
  */
 
 #include <Ultrasonic.h> // From ultrasonic library at http://wiki.tetrasys-design.net/HCSR04Ultrasonic
+#include <NewPing.h>    // From NewPing library at http://playground.arduino.cc/Code/NewPing
 #include <Timers.h>     // From ME 210
 #include <Servo.h>      // Standard arduino library
 #include "line_sensor.hpp"
+
+#define VERBOSE
 
 // Pin Layout
 // NOTE: servos MUST be on pins 9, 10, because the servo library shuts those pins off irrespective of where the servos are
@@ -43,8 +46,8 @@
 #define MOTOR3_SPEED_COMP 1.0
 #define MOTOR4_SPEED_COMP 1.0
 
-Ultrasonic ultra_right(ULTRASONIC_T,ULTRASONIC_RIGHT_E);
-Ultrasonic ultra_back(ULTRASONIC_T,ULTRASONIC_BACK_E);
+NewPing ultra_right(ULTRASONIC_T,ULTRASONIC_RIGHT_E);
+NewPing ultra_back(ULTRASONIC_T, ULTRASONIC_BACK_E);
 
 // Servos
 Servo servo_arms;
@@ -140,7 +143,7 @@ void setup() {
   // Init servos
   servo_arms.attach(SERVO_ARMS);
   servo_lifter.attach(SERVO_LIFTER);
-  reset_loader(); // TODO: comment in
+//  reset_loader(); // TODO: comment in
 }
 
 #pragma mark -
@@ -149,9 +152,21 @@ void setup() {
 // Main loop code
 void loop() {
   // Drive forward
-//  drive_motor(MOTOR2, 0.1, false);
-//  drive_motor(MOTOR4, 0.1, false  );
+  drive_motor(MOTOR1, 0.9, false);
+  drive_motor(MOTOR4, 0.1, false);
 
+  // TODO: perhaps check these at a lower interval
+  int back_dist = ultra_back.ping() / US_ROUNDTRIP_CM;
+  int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
+
+#ifdef VERBOSE
+  Serial.print("Right ultrasonic: ");
+  Serial.print(right_dist);   
+  Serial.println(" cm");
+  Serial.print("Back ultrasonic: ");
+  Serial.print(back_dist);   
+  Serial.println(" cm");
+#endif
 
 //  drive_motor(MOTOR1, 0.2, false);
 //  drive_motor(MOTOR3, 0.2, false);
@@ -170,5 +185,8 @@ void loop() {
 //    myservo.write(pos);              // tell servo to go to position in variable 'pos'
 //    delay(15);                       // waits 15ms for the servo to reach the position
 //  }
+
+  // TODO: set loop interal
+  delay(50);
 }
 
