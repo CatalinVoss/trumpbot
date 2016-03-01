@@ -182,22 +182,33 @@ void setup() {
 #pragma mark -
 #pragma mark Main
 
+// TODO: set loop interal
+#define MAIN_LOOP_DELAY 50
+
 // Main loop code
 void loop() {
   unload();
   delay(2000);
-  
-  // Drive forward
-//  drive_motor(MOTOR2, 0.3, false);
-//  drive_motor(MOTOR4, 0.3, false);
 
-  // TODO: perhaps check these at a lower interval
+  // ===== Measure ultrasonic =====
   int back_dist = ultra_back.ping() / US_ROUNDTRIP_CM;
   // This delay is crucial! Triggering them 1 by 1 otherwise causes interference.
   // The alternative is NOT to share the trigger pin or use the same input PIN for both with a logical OR in between
   delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
+
+
+//  drive_motor(MOTOR1, 0.2, false);
+//  drive_motor(MOTOR3, 0.2, false);
+//  // Drive backward
+//  drive_motor(MOTOR2, 1, false);
+//  drive_motor(MOTOR4, 1, false);
+//  // Drive forward
+//  drive_motor(MOTOR2, 0.3, false);
+//  drive_motor(MOTOR4, 0.3, false);
+
+  delay(MAIN_LOOP_DELAY);
 #ifdef VERBOSE
   Serial.print("Right ultrasonic: ");
   Serial.print(right_dist);
@@ -205,15 +216,5 @@ void loop() {
   Serial.print(back_dist);
   Serial.println(" cm");
 #endif
-
-//  drive_motor(MOTOR1, 0.2, false);
-//  drive_motor(MOTOR3, 0.2, false);
-
-//  // Drive backward
-//  drive_motor(MOTOR2, 1, false);
-//  drive_motor(MOTOR4, 1, false);
-
-  // TODO: set loop interal
-  delay(50);
 }
 
