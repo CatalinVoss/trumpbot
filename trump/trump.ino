@@ -115,6 +115,7 @@ void spin() {
 // Speed from 0 to 1
 void move_arms(float s, int t, bool backwards) {
   // 0 is full speed one direction, 90 is neutral, and 180 is full speed the other direction
+  delay(100);
   if (backwards) {
      servo_arm_l.write(90*(1.0-s));
      servo_arm_r.write(90*s+90);
@@ -125,24 +126,27 @@ void move_arms(float s, int t, bool backwards) {
   delay(t);
   servo_arm_r.write(90); // stop
   servo_arm_l.write(90); // stop
+  delay(100);
 }
 
 // Resets lifter into position to receive chip load
 void reset_loader() {
   // Stop moving arms
-  servo_arm_l.write(90); // speed controlled
-  servo_arm_r.write(90); // speed controlled
+  move_arms(0,0,true);
   servo_lifter.write(LIFTER_REST_POS);
   delay(500); // give the servo time to move to starting position
 }
 
 // Unloads arms (blocking code)
 void unload() {
-  move_arms(0.2, 400, false);
+  Serial.println("Opening arms");
+  move_arms(0.1, 600, false);
+  Serial.println("Lifting plate");
   servo_lifter.write(LIFTER_UNLOAD_POS);
   delay(UNLOAD_TIME);
-  reset_loader();
-  move_arms(0.2, 400, true);
+  Serial.println("Closing arms");
+  servo_lifter.write(LIFTER_REST_POS);
+  move_arms(0.1, 600, true); // 250
 }
 
 void stop_all() {
@@ -188,7 +192,7 @@ void setup() {
 // Main loop code
 void loop() {
   unload();
-  delay(5000);
+  delay(2000);
   
   // Drive forward
 //  drive_motor(MOTOR2, 0.3, false);
