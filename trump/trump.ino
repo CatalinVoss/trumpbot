@@ -32,9 +32,10 @@
 #define ULTRASONIC_BACK_E   7
 
 // Contact Sensors
-#define CONTACT_BACK_L      8
-#define CONTACT_BACK_R      A3
-#define CONTACT_RIGHT       A4
+#define CONTACT_BACK_L      A4
+//#define CONTACT_BACK_R      // Not connected
+#define CONTACT_RIGHT_B     8
+#define CONTACT_RIGHT_F     A3
 
 // Tape sensors
 #define TAPE_L              A0
@@ -65,7 +66,9 @@ enum state {
   starting,
   unloading_chips,
   driving_to_base,
-  driving_to_buckets
+  driving_to_buckets,
+  drive_to_corner
+  // TODO: add lots
 };
 
 state current_state;
@@ -76,6 +79,28 @@ state current_state;
 //bool check_tape_l() {
 //  
 //}
+
+#pragma mark -
+#pragma mark Contact
+
+// Contact Sensors
+#define CONTACT_BACK_L      A4
+//#define CONTACT_BACK_R      // Not connected
+#define CONTACT_RIGHT_B     8
+#define CONTACT_RIGHT_F     A3
+
+bool check_back_l_contact() {
+  return (analogRead(CONTACT_BACK_L) > 500);
+}
+
+bool check_right_b_contact() {
+  return digitalRead(CONTACT_RIGHT_B);
+}
+
+bool check_right_f_contact() {
+  return (analogRead(CONTACT_RIGHT_F) > 500);
+}
+
 
 #pragma mark -
 #pragma mark Helpers
@@ -125,9 +150,9 @@ void spin() {
 #define LIFTER_MID_POS     60
 #define LIFTER_UNLOAD_POS  130
 // Speed-controlled
-#define ARM_L_REST_POS     12
+#define ARM_L_REST_POS     8 // -4 deg hardware adjustment
 #define ARM_R_REST_POS     110
-#define ARM_L_UNLOAD_POS   110
+#define ARM_L_UNLOAD_POS   106 // -4 deg hardware adjustment
 #define ARM_R_UNLOAD_POS   12
 #define UNLOAD_TIME 800 // in ms
 #define SERVO_DELAY 500
@@ -232,8 +257,18 @@ void loop() {
    if (right_dist < 20 && back_dist < 20) {
       // drive into corner
       stop_all();
+      current_state == drive_to_corner;
     } else {
       spin();
+    }
+  } else if (current_state == drive_to_corner) {
+
+    if (check_back_l_contact()) {
+      stop_all();
+    } else {
+      // Drive backward
+      drive_motor(MOTOR2, 0.5, false);
+      drive_motor(MOTOR4, 0.5, false);
     }
   }
  
