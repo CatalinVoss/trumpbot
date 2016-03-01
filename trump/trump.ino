@@ -94,7 +94,10 @@ void drive_motor(int motor, float speed, bool forward) {
 
 // Keep turning the robot
 void spin() {
-  
+  drive_motor(MOTOR1, 0.2, true);
+  drive_motor(MOTOR2, 0.2, true);
+  drive_motor(MOTOR3, 0.2, true);
+  drive_motor(MOTOR4, 0.2, true);
 }
 
 // Servo Position Constants
