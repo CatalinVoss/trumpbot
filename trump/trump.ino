@@ -125,10 +125,10 @@ void spin() {
 #define LIFTER_MID_POS     60
 #define LIFTER_UNLOAD_POS  110
 // Speed-controlled
-#define ARM_L_REST_POS     0
-#define ARM_R_REST_POS     120
-#define ARM_L_UNLOAD_POS   120
-#define ARM_R_UNLOAD_POS   0//250 // -110//
+#define ARM_L_REST_POS     20
+#define ARM_R_REST_POS     110
+#define ARM_L_UNLOAD_POS   110
+#define ARM_R_UNLOAD_POS   20//250 // -110//
 #define UNLOAD_TIME 800 // in ms
 #define SERVO_DELAY 500
 
