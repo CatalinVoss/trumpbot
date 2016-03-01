@@ -165,7 +165,7 @@ void unload() {
   for (int i=ARM_L_UNLOAD_POS-ARM_L_REST_POS; i >= 0; i--) {
     servo_arm_l.write(ARM_L_REST_POS+i);
     servo_arm_r.write(ARM_R_REST_POS-i);
-    delay(25);
+    delay(10);
   }
   
   servo_lifter.write(LIFTER_REST_POS);
