@@ -108,9 +108,24 @@ void spin() {
 #define LIFTER_REST_POS    45
 #define LIFTER_UNLOAD_POS  110
 // Speed-controlled
-#define ARMS_SPEED 45 // 0 is full speed one direction, 90 is neutral, and 180 is full speed the other direction
-#define ARMS_TIME 400 // in ms
+//#define ARMS_SPEED 45 
+//#define ARMS_TIME 400 // in ms
 #define UNLOAD_TIME 2000 // in ms
+
+// Speed from 0 to 1
+void move_arms(float s, int t, bool backwards) {
+  // 0 is full speed one direction, 90 is neutral, and 180 is full speed the other direction
+  if (backwards) {
+     servo_arm_l.write(90*(1.0-s));
+     servo_arm_r.write(90*s+90);
+  } else {
+     servo_arm_r.write(90*(1.0-s));
+     servo_arm_l.write(90*s+90);
+  }
+  delay(t);
+  servo_arm_r.write(90); // stop
+  servo_arm_l.write(90); // stop
+}
 
 // Resets lifter into position to receive chip load
 void reset_loader() {
@@ -123,21 +138,11 @@ void reset_loader() {
 
 // Unloads arms (blocking code)
 void unload() {
-  servo_arm_l.write(ARMS_SPEED); // order is important here... :)
-  servo_arm_r.write(90+ARMS_SPEED); // order is important here... :)
-  delay(ARMS_TIME);
-  servo_arm_l.write(90); // stop arms
-  servo_arm_r.write(90); // stop arms
+  move_arms(0.2, 400, false);
   servo_lifter.write(LIFTER_UNLOAD_POS);
   delay(UNLOAD_TIME);
-  
-  servo_arm_l.write(90+ARMS_SPEED);
-  servo_arm_r.write(ARMS_SPEED);
-  delay(ARMS_TIME);
-  servo_arm_l.write(90);
-  servo_arm_r.write(90);
-  
   reset_loader();
+  move_arms(0.2, 400, true);
 }
 
 void stop_all() {
@@ -183,6 +188,7 @@ void setup() {
 // Main loop code
 void loop() {
   unload();
+  delay(5000);
   
   // Drive forward
 //  drive_motor(MOTOR2, 0.3, false);
