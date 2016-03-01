@@ -123,12 +123,12 @@ void spin() {
 // Angle-controlled
 #define LIFTER_REST_POS    45
 #define LIFTER_MID_POS     60
-#define LIFTER_UNLOAD_POS  110
+#define LIFTER_UNLOAD_POS  130//110
 // Speed-controlled
-#define ARM_L_REST_POS     20
+#define ARM_L_REST_POS     12
 #define ARM_R_REST_POS     110
 #define ARM_L_UNLOAD_POS   110
-#define ARM_R_UNLOAD_POS   20//250 // -110//
+#define ARM_R_UNLOAD_POS   12//250 // -110//
 #define UNLOAD_TIME 800 // in ms
 #define SERVO_DELAY 500
 
@@ -143,19 +143,31 @@ void reset_loader() {
 // Unloads arms (blocking code)
 void unload() {
   Serial.println("Opening arms");
-  servo_lifter.write(LIFTER_MID_POS);
-  delay(SERVO_DELAY);
-  servo_arm_l.write(ARM_L_UNLOAD_POS);
-  servo_arm_r.write(ARM_R_UNLOAD_POS);
-  delay(SERVO_DELAY);
+  for (int i=LIFTER_REST_POS+1; i <= LIFTER_MID_POS; i++) {
+      servo_lifter.write(i);
+      delay(25);
+  }
+  
+  // Move arms out
+  for (int i=1; i <= ARM_L_UNLOAD_POS-ARM_L_REST_POS; i++) {
+    servo_arm_l.write(ARM_L_REST_POS+i);
+    servo_arm_r.write(ARM_R_REST_POS-i);
+    delay(15);
+  }
+  
   servo_lifter.write(LIFTER_UNLOAD_POS);
   delay(SERVO_DELAY);
   delay(UNLOAD_TIME);
   servo_lifter.write(LIFTER_MID_POS);
   delay(SERVO_DELAY);
-  servo_arm_l.write(ARM_L_REST_POS);
-  servo_arm_r.write(ARM_R_REST_POS);
-  delay(SERVO_DELAY);
+
+  // Move arms in
+  for (int i=ARM_L_UNLOAD_POS-ARM_L_REST_POS; i >= 0; i--) {
+    servo_arm_l.write(ARM_L_REST_POS+i);
+    servo_arm_r.write(ARM_R_REST_POS-i);
+    delay(25);
+  }
+  
   servo_lifter.write(LIFTER_REST_POS);
   delay(SERVO_DELAY);
 //  reset_loader();
