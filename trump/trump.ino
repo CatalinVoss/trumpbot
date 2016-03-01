@@ -30,12 +30,6 @@
 #define ULTRASONIC_RIGHT_E  12
 #define ULTRASONIC_BACK_E   7
 
-//#define ULTRASONIC_BACK_T   13  // We COULD use the same trigger pin for both sensors or use the same input PIN for both with a logical OR in between
-//#define ULTRASONIC_RIGHT_T  2
-//#define ULTRASONIC_RIGHT_E  12
-//#define ULTRASONIC_BACK_E   7
-
-
 // Contact Sensors
 #define CONTACT_BACK_L      A5
 #define CONTACT_BACK_R      A3
@@ -57,6 +51,14 @@ NewPing ultra_right(ULTRASONIC_T,ULTRASONIC_RIGHT_E, MAX_DISTANCE);
 NewPing ultra_back(ULTRASONIC_T, ULTRASONIC_BACK_E, MAX_DISTANCE);
 
 // Servos
+// Note that these are controlled differently!
+// The lifter is controlled by setting a fixed angle like
+//    servo_lifter.write(angle);
+// while the arm-servos are controlled via speed and time like
+//    servo_arms.write(speed);
+//    delay(time);
+// where speed = 0 is full speed one direction, = 90 is neutral, and = 180 is full speed the other direction
+// per tutorial @ http://www.foxytronics.com/learn/microcontrollers/arduino/how-to-use-continuous-rotation-servos-with-arduino/programming
 Servo servo_arms;
 Servo servo_lifter;
 
@@ -100,27 +102,30 @@ void spin() {
 }
 
 // Servo Position Constants
-// in degrees
-#define ARMS_REST_POS      0// TODO set this before turning on!
-#define ARMS_UNLOAD_POS    0// TODO set this before turning on!
-#define LIFTER_REST_POS    45// TODO set this before turning on!
-#define LIFTER_UNLOAD_POS  110// TODO set this before turning on!
-
+// Angle-controlled
+#define LIFTER_REST_POS    45
+#define LIFTER_UNLOAD_POS  110
+// Speed-controlled
+#define ARMS_SPEED 45 // 0 is full speed one direction, 90 is neutral, and 180 is full speed the other direction
+#define ARMS_TIME 200 // in ms
 #define UNLOAD_TIME 2000 // in ms
 
-// Resets arms into position to receive chip load
+// Resets lifter into position to receive chip load
 void reset_loader() {
+  // Stop moving arms
+  servo_arms.write(90); // speed controlled
   servo_lifter.write(LIFTER_REST_POS);
-  servo_arms.write(ARMS_REST_POS);
-  delay(1000); // TODO: why do we need this
-  // TODO: move to starting position
+  delay(500); // give the servo time to move to starting position
 }
 
 // Unloads arms (blocking code)
 void unload() {
-  servo_arms.write(ARMS_UNLOAD_POS); // order is important here... :)
+  servo_arms.write(ARMS_SPEED); // order is important here... :)
+  delay(ARMS_TIME);
   servo_lifter.write(LIFTER_UNLOAD_POS);
   delay(UNLOAD_TIME);
+  servo_arms.write(90+ARMS_SPEED);
+  delay(ARMS_TIME);
   reset_loader();
 }
 
@@ -165,7 +170,6 @@ void setup() {
 // Main loop code
 void loop() {
   unload();
-
   
   // Drive forward
 //  drive_motor(MOTOR2, 0.3, false);
@@ -173,16 +177,18 @@ void loop() {
 
   // TODO: perhaps check these at a lower interval
   int back_dist = ultra_back.ping() / US_ROUNDTRIP_CM;
-  delay(10); // This is crucial! Triggering them 1 by 1 otherwise causes interference. The alternative is NOT to share the trigger pin or 
+  // This delay is crucial! Triggering them 1 by 1 otherwise causes interference.
+  // The alternative is NOT to share the trigger pin or use the same input PIN for both with a logical OR in between
+  delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
-//#ifdef VERBOSE
-//  Serial.print("Right ultrasonic: ");
-//  Serial.print(right_dist);
-//  Serial.print(" cm, Back ultrasonic: ");
-//  Serial.print(back_dist);
-//  Serial.println(" cm");
-//#endif
+#ifdef VERBOSE
+  Serial.print("Right ultrasonic: ");
+  Serial.print(right_dist);
+  Serial.print(" cm, Back ultrasonic: ");
+  Serial.print(back_dist);
+  Serial.println(" cm");
+#endif
 
 //  drive_motor(MOTOR1, 0.2, false);
 //  drive_motor(MOTOR3, 0.2, false);
@@ -190,17 +196,6 @@ void loop() {
 //  // Drive backward
 //  drive_motor(MOTOR2, 1, false);
 //  drive_motor(MOTOR4, 1, false);
-
-//
-//  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
-//    // in steps of 1 degree
-//    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-//    delay(15);                       // waits 15ms for the servo to reach the position
-//  }
-//  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-//    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-//    delay(15);                       // waits 15ms for the servo to reach the position
-//  }
 
   // TODO: set loop interal
   delay(50);
