@@ -22,7 +22,8 @@
 #define MOTOR_EN            4   // Motor Enable
 
 // Servos
-#define SERVO_ARMS          9   // Both arm servos connected here
+#define SERVO_ARM_L         9  
+#define SERVO_ARM_R         2
 #define SERVO_LIFTER        10  // Lifter servo
 
 // Ultrasonic Sensors
@@ -59,7 +60,8 @@ NewPing ultra_back(ULTRASONIC_T, ULTRASONIC_BACK_E, MAX_DISTANCE);
 //    delay(time);
 // where speed = 0 is full speed one direction, = 90 is neutral, and = 180 is full speed the other direction
 // per tutorial @ http://www.foxytronics.com/learn/microcontrollers/arduino/how-to-use-continuous-rotation-servos-with-arduino/programming
-Servo servo_arms;
+Servo servo_arm_l;
+Servo servo_arm_r;
 Servo servo_lifter;
 
 #pragma mark -
@@ -107,25 +109,34 @@ void spin() {
 #define LIFTER_UNLOAD_POS  110
 // Speed-controlled
 #define ARMS_SPEED 45 // 0 is full speed one direction, 90 is neutral, and 180 is full speed the other direction
-#define ARMS_TIME 200 // in ms
+#define ARMS_TIME 400 // in ms
 #define UNLOAD_TIME 2000 // in ms
 
 // Resets lifter into position to receive chip load
 void reset_loader() {
   // Stop moving arms
-  servo_arms.write(90); // speed controlled
+  servo_arm_l.write(90); // speed controlled
+  servo_arm_r.write(90); // speed controlled
   servo_lifter.write(LIFTER_REST_POS);
   delay(500); // give the servo time to move to starting position
 }
 
 // Unloads arms (blocking code)
 void unload() {
-  servo_arms.write(ARMS_SPEED); // order is important here... :)
+  servo_arm_l.write(ARMS_SPEED); // order is important here... :)
+  servo_arm_r.write(90+ARMS_SPEED); // order is important here... :)
   delay(ARMS_TIME);
+  servo_arm_l.write(90); // stop arms
+  servo_arm_r.write(90); // stop arms
   servo_lifter.write(LIFTER_UNLOAD_POS);
   delay(UNLOAD_TIME);
-  servo_arms.write(90+ARMS_SPEED);
+  
+  servo_arm_l.write(90+ARMS_SPEED);
+  servo_arm_r.write(ARMS_SPEED);
   delay(ARMS_TIME);
+  servo_arm_l.write(90);
+  servo_arm_r.write(90);
+  
   reset_loader();
 }
 
@@ -151,7 +162,8 @@ void setup() {
   pinMode(MOTOR3, OUTPUT);
   pinMode(MOTOR4, OUTPUT);
   pinMode(MOTOR_EN, OUTPUT);
-  pinMode(SERVO_ARMS, OUTPUT);
+  pinMode(SERVO_ARM_L, OUTPUT);
+  pinMode(SERVO_ARM_R, OUTPUT);
   pinMode(SERVO_LIFTER, OUTPUT);
 
   // Enable all motors, stopped
@@ -159,9 +171,10 @@ void setup() {
   stop_all();
 
   // Init servos
-  servo_arms.attach(SERVO_ARMS);
+  servo_arm_l.attach(SERVO_ARM_L);
+  servo_arm_r.attach(SERVO_ARM_R);
   servo_lifter.attach(SERVO_LIFTER);
-  reset_loader(); // TODO: comment in
+  reset_loader();
 }
 
 #pragma mark -
