@@ -10,18 +10,32 @@
 // Pin Layout
 // NOTE: servos MUST be on pins 9, 10, because the servo library shuts those pins off irrespective of where the servos are
 //       per https://www.arduino.cc/en/Reference/Servo
+
+// Motors
 #define MOTOR1              3   // Motor Front
 #define MOTOR2              5   // Motor Right
 #define MOTOR3              6   // Motor Back
 #define MOTOR4              11  // Motor Left
 #define MOTOR_EN            4   // Motor Enable
+
+// Servos
+#define SERVO_ARMS          9   // Both arm servos connected here
+#define SERVO_LIFTER        10  // Lifter servo
+
+// Ultrasonic Sensors
 #define ULTRASONIC_T        13  // Same trigger for both sensors
 #define ULTRASONIC_RIGHT_E  12
 #define ULTRASONIC_BACK_E   7
-#define SERVO_ARMS          9   // Both arm servos connected here
-#define SERVO_LIFTER        10  // Lifter servo
-#define CONTACT_BACK_L      
-#define CONTACT_BACK_R      
+
+// Contact Sensors
+#define CONTACT_BACK_L      2
+#define CONTACT_BACK_R      A3
+#define CONTACT_RIGHT       A4
+
+// Tape sensors
+#define TAPE_L              A0
+#define TAPE_C              A1
+#define TAPE_R              A2
 
 // Speed compensation
 #define MOTOR1_SPEED_COMP 1.0
