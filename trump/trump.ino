@@ -8,16 +8,20 @@
 #include "line_sensor.hpp"
 
 // Pin Layout
-#define MOTOR1              5   // Motor Front
-#define MOTOR2              6   // Motor Right
-#define MOTOR3              9   // Motor Back
-#define MOTOR4              10  // Motor Left
+// NOTE: servos MUST be on pins 9, 10, because the servo library shuts those pins off irrespective of where the servos are
+//       per https://www.arduino.cc/en/Reference/Servo
+#define MOTOR1              3   // Motor Front
+#define MOTOR2              5   // Motor Right
+#define MOTOR3              6   // Motor Back
+#define MOTOR4              11  // Motor Left
 #define MOTOR_EN            4   // Motor Enable
 #define ULTRASONIC_T        13  // Same trigger for both sensors
 #define ULTRASONIC_RIGHT_E  12
 #define ULTRASONIC_BACK_E   7
-#define SERVO_ARMS          3   // Both arm servos connected here
-#define SERVO_LIFTER        11  // Lifter servo
+#define SERVO_ARMS          9   // Both arm servos connected here
+#define SERVO_LIFTER        10  // Lifter servo
+#define CONTACT_BACK_L      
+#define CONTACT_BACK_R      
 
 // Speed compensation
 #define MOTOR1_SPEED_COMP 1.0
@@ -66,6 +70,30 @@ void drive_motor(int motor, float speed, bool forward) {
   analogWrite(motor, duty*PWM_RANGE); 
 }
 
+// Servo Position Constants
+// in degrees
+#define ARMS_REST_POS      0// TODO set this before turning on!
+#define ARMS_UNLOAD_POS    0// TODO set this before turning on!
+#define LIFTER_REST_POS    0// TODO set this before turning on!
+#define LIFTER_UNLOAD_POS  0// TODO set this before turning on!
+
+#define UNLOAD_TIME 100 // in ms
+
+// Resets arms into position to receive chip load
+void reset_loader() {
+  servo_lifter.write(LIFTER_REST_POS);
+  servo_arms.write(ARMS_REST_POS);
+  // TODO: move to starting position
+}
+
+// Unloads arms (blocking code)
+void unload() {
+  servo_arms.write(ARMS_UNLOAD_POS); // order is important here... :)
+  servo_lifter.write(LIFTER_UNLOAD_POS);
+  delay(UNLOAD_TIME);
+  reset_loader();
+}
+
 void stop_all() {
   drive_motor(MOTOR1, 0, true);
   drive_motor(MOTOR2, 0, true);
@@ -87,6 +115,9 @@ void setup() {
   pinMode(MOTOR2, OUTPUT);
   pinMode(MOTOR3, OUTPUT);
   pinMode(MOTOR4, OUTPUT);
+  pinMode(MOTOR_EN, OUTPUT);
+  pinMode(SERVO_ARMS, OUTPUT);
+  pinMode(SERVO_LIFTER, OUTPUT);
 
   // Enable all motors, stopped
   digitalWrite(MOTOR_EN, HIGH);
@@ -95,6 +126,7 @@ void setup() {
   // Init servos
   servo_arms.attach(SERVO_ARMS);
   servo_lifter.attach(SERVO_LIFTER);
+  reset_loader(); // TODO: comment in
 }
 
 #pragma mark -
@@ -103,12 +135,12 @@ void setup() {
 // Main loop code
 void loop() {
   // Drive forward
-//  drive_motor(MOTOR2, 0.5, false);
-//  drive_motor(MOTOR4, 0.5, false  );
+//  drive_motor(MOTOR2, 0.1, false);
+//  drive_motor(MOTOR4, 0.1, false  );
 
 
-  drive_motor(MOTOR1, 0.3, false);
-  drive_motor(MOTOR3, 0.2, false  );
+//  drive_motor(MOTOR1, 0.2, false);
+//  drive_motor(MOTOR3, 0.2, false);
 
 //  // Drive backward
 //  drive_motor(MOTOR2, 1, false);
