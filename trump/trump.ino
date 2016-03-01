@@ -113,10 +113,10 @@ void drive_motor(int motor, float speed, bool forward) {
 
 // Keep turning the robot
 void spin() {
-  drive_motor(MOTOR1, 0.2, true);
-  drive_motor(MOTOR2, 0.2, true);
-  drive_motor(MOTOR3, 0.2, true);
-  drive_motor(MOTOR4, 0.2, true);
+  drive_motor(MOTOR1, 0.6, true);
+  drive_motor(MOTOR2, 0.6, true);
+  drive_motor(MOTOR3, 0.6, true);
+  drive_motor(MOTOR4, 0.6, true);
 }
 
 // Servo Position Constants
@@ -221,15 +221,29 @@ void setup() {
 
 // Main loop code
 void loop() {
-  unload();
-  delay(2000);
-
   // ===== Measure ultrasonic =====
   int back_dist = ultra_back.ping() / US_ROUNDTRIP_CM;
   // This delay is crucial! Triggering them 1 by 1 otherwise causes interference.
   // The alternative is NOT to share the trigger pin or use the same input PIN for both with a logical OR in between
   delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
+
+  if (current_state == starting) {
+   if (right_dist < 20 && back_dist < 20) {
+      // drive into corner
+      stop_all();
+    } else {
+      spin();
+    }
+  }
+ 
+
+// To test unload:
+//  unload();
+//  delay(2000);
+
+
+
 
 //  drive_motor(MOTOR1, 0.2, false);
 //  drive_motor(MOTOR3, 0.2, false);
@@ -241,13 +255,13 @@ void loop() {
 //  drive_motor(MOTOR4, 0.3, false);
 
 #ifdef VERBOSE
-  Serial.println(analogRead(TAPE_L)); // this is doing *something*
+//  Serial.println(analogRead(TAPE_L)); // this is doing *something*
   
-//  Serial.print("Right ultrasonic: ");
-//  Serial.print(right_dist);
-//  Serial.print(" cm, Back ultrasonic: ");
-//  Serial.print(back_dist);
-//  Serial.println(" cm");
+  Serial.print("Right ultrasonic: ");
+  Serial.print(right_dist);
+  Serial.print(" cm, Back ultrasonic: ");
+  Serial.print(back_dist);
+  Serial.println(" cm");
 #endif
   delay(MAIN_LOOP_DELAY);
 }
