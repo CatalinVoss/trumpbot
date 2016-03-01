@@ -23,8 +23,8 @@
 
 // Servos
 #define SERVO_ARM_L         9  
-#define SERVO_ARM_R         2
-#define SERVO_LIFTER        10  // Lifter servo
+#define SERVO_ARM_R         10
+#define SERVO_LIFTER        2   // Lifter servo
 
 // Ultrasonic Sensors
 #define ULTRASONIC_T        13  // Same trigger for both sensors
@@ -107,7 +107,8 @@ void spin() {
 #define ARM_R_REST_POS     0
 #define ARM_L_UNLOAD_POS   50
 #define ARM_R_UNLOAD_POS   50
-#define UNLOAD_TIME 2000 // in ms
+#define UNLOAD_TIME 800 // in ms
+#define SERVO_DELAY 500
 
 // Resets lifter into position to receive chip load
 void reset_loader() {
@@ -121,14 +122,21 @@ void reset_loader() {
 void unload() {
   Serial.println("Opening arms");
   servo_lifter.write(LIFTER_MID_POS);
-  delay(300);
+  delay(SERVO_DELAY);
   servo_arm_l.write(ARM_L_UNLOAD_POS);
   servo_arm_r.write(ARM_R_UNLOAD_POS);
-  delay(300);
+  delay(SERVO_DELAY);
   servo_lifter.write(LIFTER_UNLOAD_POS);
+  delay(SERVO_DELAY);
   delay(UNLOAD_TIME);
-  Serial.println("Closing arms");
-  reset_loader();
+  servo_lifter.write(LIFTER_MID_POS);
+  delay(SERVO_DELAY);
+  servo_arm_l.write(ARM_L_REST_POS);
+  servo_arm_r.write(ARM_R_REST_POS);
+  delay(SERVO_DELAY);
+  servo_lifter.write(LIFTER_REST_POS);
+  delay(SERVO_DELAY);
+//  reset_loader();
 }
 
 void stop_all() {
