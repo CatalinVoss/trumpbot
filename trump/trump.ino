@@ -48,6 +48,8 @@
 #define MOTOR3_SPEED_COMP 1.0
 #define MOTOR4_SPEED_COMP 1.0
 
+#define SENSOR_D_THRESH 512
+
 #define MAX_DISTANCE 400 // in cm
 NewPing ultra_right(ULTRASONIC_T,ULTRASONIC_RIGHT_E, MAX_DISTANCE);
 NewPing ultra_back(ULTRASONIC_T, ULTRASONIC_BACK_E, MAX_DISTANCE);
@@ -103,7 +105,7 @@ bool check_tape_c() {
 #define CONTACT_RIGHT_F     A3
 
 bool check_back_l_contact() {
-  return (analogRead(CONTACT_BACK_L) > 500);
+  return (analogRead(CONTACT_BACK_L) > SENSOR_D_THRESH);
 }
 
 bool check_right_b_contact() {
@@ -111,7 +113,7 @@ bool check_right_b_contact() {
 }
 
 bool check_right_f_contact() {
-  return (analogRead(CONTACT_RIGHT_F) > 500);
+  return (analogRead(CONTACT_RIGHT_F) > SENSOR_D_THRESH);
 }
 
 
