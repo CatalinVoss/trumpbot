@@ -285,6 +285,7 @@ void loop() {
   delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
+  
   // ===== State machine =====
   if (current_state == starting) {
    if (right_dist < 20 && back_dist < 20) {
@@ -349,14 +350,38 @@ void loop() {
       drive_motor(MOTOR3, 0.5, false);
     }
   } else if (current_state == driving_to_buckets) {
-    if (check_tape_l() || check_tape_r()) { // if on line
-      // Drive forward
-      drive_motor(MOTOR2, 0.5, true);
-      drive_motor(MOTOR4, 0.5, true);
-    } else {
-      stop_all();
-      current_state = unloading_chips;
+    while (true) {
+      if (!check_tape_l() && !check_tape_r() && !check_tape_c()) { // else if (check_tape_l() && check_tape_r() && !check_tape_c()) { // left and right on, center off ==> detects t-line
+        // Drive forward
+        stop_all();
+        current_state = unloading_chips;
+        break;
+      } else if (!check_tape_l()) { // left off
+        // turn in place slightly to right if left tape sensor is off
+        drive_motor(MOTOR1, 0.5, true);
+        delay(50);
+      } else if (!check_tape_r()) { // right off
+        // turn in place slightly to left if left tape sensor is off
+        drive_motor(MOTOR1, 0.5, false);
+        delay(50);
+      } else {
+        // Drive forward
+        drive_motor(MOTOR2, 0.5, true);
+        drive_motor(MOTOR4, 0.5, true);
+      }
     }
+    
+    
+//    if (check_tape_l() || check_tape_r()) { // if on line
+//      // Drive forward
+//      drive_motor(MOTOR2, 0.5, true);
+//      drive_motor(MOTOR4, 0.5, true);
+//    } else {
+//      stop_all();
+//      current_state = unloading_chips;
+//    }
+    
+    
   } else if (current_state == unloading_chips) {
     stop_all();
     unload();
@@ -370,6 +395,13 @@ void loop() {
 //  Serial.print("tape: ");
 //  Serial.println(analogRead(TAPE_L));
 
+//  Serial.print("tape readings L: ");
+//  Serial.print(check_tape_l());
+//  Serial.print(" C: ");
+//  Serial.print(check_tape_c());
+//  Serial.print(" R: ");
+//  Serial.print(check_tape_r());
+//  Serial.println(" ");
 
   // Print contact sensors
 //  Serial.print("analog: ");
