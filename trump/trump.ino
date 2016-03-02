@@ -164,7 +164,7 @@ void spin() {
 // Angle-controlled
 #define LIFTER_REST_POS    45
 #define LIFTER_MID_POS     60
-#define LIFTER_UNLOAD_POS  130
+#define LIFTER_UNLOAD_POS  120
 // Speed-controlled
 #define ARM_L_REST_POS     8 // -4 deg hardware adjustment
 #define ARM_R_REST_POS     110
@@ -268,6 +268,15 @@ void setup() {
 // TODO: set loop interal
 #define MAIN_LOOP_DELAY 50
 
+void driveCorner() {
+  // Drive backward
+  drive_motor(MOTOR2, 0.5, false);
+  drive_motor(MOTOR4, 0.5, false);
+  // Drive right
+  drive_motor(MOTOR1, 0.5, true);
+  drive_motor(MOTOR3, 0.5, true);
+}
+
 // Main loop code
 void loop() {
   // ===== Measure ultrasonic =====
@@ -289,37 +298,61 @@ void loop() {
     }
   } else if (current_state == drive_to_corner_back) {
     if (check_back_l_contact()) {
-      delay(200); // drive "a bit more" to make sure we're perfectly lined up -- since the sensor is just on one side
+      delay(500); // drive "a bit more" to make sure we're perfectly lined up -- since the sensor is just on one side
       stop_all();
       Serial.println("found back");
       current_state = drive_to_corner_right;
     } else {
-      // Drive backward
-      drive_motor(MOTOR2, 0.5, false);
-      drive_motor(MOTOR4, 0.5, false);
+      driveCorner();
+      // To isolate the motions, uncomment:
+      //      // Drive backward
+      //      drive_motor(MOTOR2, 0.5, false);
+      //      drive_motor(MOTOR4, 0.5, false);
+            
     }
   } else if (current_state == drive_to_corner_right) {
     if (check_right_b_contact() && check_right_f_contact()) {
-      delay(200); // drive "a bit more" to make sure we're perfectly lined up
+      delay(500); // drive "a bit more" to make sure we're perfectly lined up
       stop_all();
       current_state = drive_to_center;
       Serial.println("found right");
     } else {
-      // Drive right
-      drive_motor(MOTOR1, 0.5, true);
-      drive_motor(MOTOR3, 0.5, true);
+      driveCorner();
+      // To isolate the motions, uncomment:
+      //       // Drive right
+      //      drive_motor(MOTOR1, 0.5, true);
+      //      drive_motor(MOTOR3, 0.5, true);
     }
   } else if (current_state == drive_to_center) {
+    // Drive forward
+    drive_motor(MOTOR2, 0.5, true);
+    drive_motor(MOTOR4, 0.5, true);
+    delay(2000);
+    stop_all();
+
+    // Drive right to line up w corner again
+    drive_motor(MOTOR1, 0.5, true);
+    drive_motor(MOTOR3, 0.5, true);
+    delay(500);
+    stop_all();
+    delay(500);
+
     // Drive left
+    drive_motor(MOTOR1, 0.3, false);
+    drive_motor(MOTOR3, 0.3, false);
+    delay(500);
+
     drive_motor(MOTOR1, 0.5, false);
     drive_motor(MOTOR3, 0.5, false);
-    delay(5000); // entirely timing based ... uggghhh
+    delay(5500); // entirely timing based ... uggghhh
     stop_all();
+    
     current_state = drive_forward;
 
     // TODO:
     // drive left, then forward before hitting box a fair bunch, then left until line is hit, then back (line following) until lined up with brick
   }
+  
 
 
 //  Serial.print("tape: ");
