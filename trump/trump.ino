@@ -163,7 +163,7 @@ void spin() {
 // Angle-controlled
 #define LIFTER_REST_POS    45
 #define LIFTER_MID_POS     60
-#define LIFTER_UNLOAD_POS  120
+#define LIFTER_UNLOAD_POS  115//120
 // Speed-controlled
 #define ARM_L_REST_POS     8 // -4 deg hardware adjustment
 #define ARM_R_REST_POS     110
@@ -350,21 +350,25 @@ void loop() {
       drive_motor(MOTOR3, 0.5, false);
     }
   } else if (current_state == driving_to_buckets) {
+    bool hacked = false;
     while (true) {
-      if (!check_tape_l() && !check_tape_r() && !check_tape_c()) { // else if (check_tape_l() && check_tape_r() && !check_tape_c()) { // left and right on, center off ==> detects t-line
+      if (hacked && !check_tape_l() && !check_tape_r() && !check_tape_c()) { // else if (check_tape_l() && check_tape_r() && !check_tape_c()) { // left and right on, center off ==> detects t-line
         // Drive forward
         stop_all();
         current_state = unloading_chips;
         break;
       } else if (!check_tape_l()) { // left off
+        hacked = true;
         // turn in place slightly to right if left tape sensor is off
         drive_motor(MOTOR1, 0.5, true);
         delay(50);
       } else if (!check_tape_r()) { // right off
+        hacked = true;
         // turn in place slightly to left if left tape sensor is off
         drive_motor(MOTOR1, 0.5, false);
         delay(50);
       } else {
+//        hacked = true;
         // Drive forward
         drive_motor(MOTOR2, 0.5, true);
         drive_motor(MOTOR4, 0.5, true);
