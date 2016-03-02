@@ -67,7 +67,9 @@ enum state {
   unloading_chips,
   driving_to_base,
   driving_to_buckets,
-  drive_to_corner
+  drive_to_corner,
+  drive_to_center,
+  drive_forward
   // TODO: add lots
 };
 
@@ -243,6 +245,7 @@ void setup() {
 
   // Start state machine
   current_state = starting;
+  Serial.println("set up done...");
 }
 
 #pragma mark -
@@ -261,28 +264,36 @@ void loop() {
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
   // ===== State machine =====
+  if (current_state == starting) {
+   if (right_dist < 20 && back_dist < 20) {
+      // drive into corner
+      stop_all();
+      current_state = drive_to_corner;
+      Serial.println("found correct orientation ");
+    } else {
+      spin();
+    }
+  } else if (current_state == drive_to_corner) {
+    if (check_back_l_contact() && check_right_b_contact() && check_right_f_contact() ) {
+      stop_all();
+      current_state = drive_to_center;
+      Serial.println("found corner ");
+    } else {
+      // Drive backward
+      //drive_motor(MOTOR2, 0.5, false);
+      drive_motor(MOTOR4, 0.5, false);
+    }
+  }else if (current_state == drive_to_center) {
+    drive_motor(MOTOR1, 1, false);
+    drive_motor(MOTOR2, 0, true);
+    drive_motor(MOTOR3, 1, false);
+    drive_motor(MOTOR4, 0, true);
+    delay(1000);
+    current_state = drive_forward;
+  }
 
-//  if (current_state == starting) {
-//   if (right_dist < 20 && back_dist < 20) {
-//      // drive into corner
-//      stop_all();
-//      current_state == drive_to_corner;
-//    } else {
-//      spin();
-//    }
-//  } else if (current_state == drive_to_corner) {
-//
-//    if (check_back_l_contact()) {
-//      stop_all();
-//    } else {
-//      // Drive backward
-//      drive_motor(MOTOR2, 0.5, false);
-//      drive_motor(MOTOR4, 0.5, false);
-//    }
-//  }
-
-  Serial.print("tape: ");
-  Serial.println(analogRead(TAPE_L));
+//  Serial.print("tape: ");
+//  Serial.println(analogRead(TAPE_L));
 
 
   // Print contact sensors
