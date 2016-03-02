@@ -69,7 +69,8 @@ enum state {
   unloading_chips,
   driving_to_base,
   driving_to_buckets,
-  drive_to_corner,
+  drive_to_corner_back,
+  drive_to_corner_right,
   drive_to_center,
   drive_forward
   // TODO: add lots
@@ -276,34 +277,51 @@ void loop() {
   delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
+  drive_motor(MOTOR2, 0.5, true);
+  drive_motor(MOTOR4, 0.5, true);
+  delay(3000);
+
+  /*
   // ===== State machine =====
   if (current_state == starting) {
    if (right_dist < 20 && back_dist < 20) {
       // drive into corner
       stop_all();
-      current_state = drive_to_corner;
+      current_state = drive_to_corner_back;
       Serial.println("found correct orientation ");
     } else {
       spin();
     }
-  } else if (current_state == drive_to_corner) {
-    if (check_back_l_contact() && check_right_b_contact() && check_right_f_contact() ) {
+  } else if (current_state == drive_to_corner_back) {
+    if (check_back_l_contact()) {
+      delay(200); // drive "a bit more" to make sure we're perfectly lined up -- since the sensor is just on one side
       stop_all();
-      current_state = drive_to_center;
-      Serial.println("found corner ");
+      Serial.println("found back");
+      current_state = drive_to_corner_right;
     } else {
       // Drive backward
-      //drive_motor(MOTOR2, 0.5, false);
+      drive_motor(MOTOR2, 0.5, false);
       drive_motor(MOTOR4, 0.5, false);
     }
-  }else if (current_state == drive_to_center) {
-    drive_motor(MOTOR1, 1, false);
-    drive_motor(MOTOR2, 0, true);
-    drive_motor(MOTOR3, 1, false);
-    drive_motor(MOTOR4, 0, true);
-    delay(1000);
+  } else if (current_state == drive_to_corner_right) {
+    if (check_right_b_contact() && check_right_f_contact()) {
+      delay(200); // drive "a bit more" to make sure we're perfectly lined up
+      stop_all();
+      current_state = drive_to_center;
+      Serial.println("found right");
+    } else {
+      // Drive backward
+      drive_motor(MOTOR1, 0.5, true);
+      drive_motor(MOTOR3, 0.5, true);
+    }
+  } else if (current_state == drive_to_center) {
+    drive_motor(MOTOR1, 0.5, false);
+    drive_motor(MOTOR3, 0.5, false);
+    delay(5000); // entirely timing based ... uggghhh
+    stop_all();
     current_state = drive_forward;
   }
+  */
 
 //  Serial.print("tape: ");
 //  Serial.println(analogRead(TAPE_L));
@@ -324,17 +342,6 @@ void loop() {
 //  unload();
 //  delay(2000);
 
-
-
-
-//  drive_motor(MOTOR1, 0.2, false);
-//  drive_motor(MOTOR3, 0.2, false);
-//  // Drive backward
-//  drive_motor(MOTOR2, 1, false);
-//  drive_motor(MOTOR4, 1, false);
-//  // Drive forward
-//  drive_motor(MOTOR2, 0.3, false);
-//  drive_motor(MOTOR4, 0.3, false);
 
 #ifdef VERBOSE
 //  Serial.println(analogRead(TAPE_L)); // this is doing *something*
