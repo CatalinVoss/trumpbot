@@ -45,8 +45,8 @@
 // Speed compensation
 #define MOTOR1_SPEED_COMP 1.0
 #define MOTOR2_SPEED_COMP 1.0
-#define MOTOR3_SPEED_COMP 1.0
-#define MOTOR4_SPEED_COMP 1.0
+#define MOTOR3_SPEED_COMP 0.76
+#define MOTOR4_SPEED_COMP 0.9
 
 #define SENSOR_D_THRESH 512
 
@@ -277,11 +277,6 @@ void loop() {
   delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
-  drive_motor(MOTOR2, 0.5, true);
-  drive_motor(MOTOR4, 0.5, true);
-  delay(3000);
-
-  /*
   // ===== State machine =====
   if (current_state == starting) {
    if (right_dist < 20 && back_dist < 20) {
@@ -310,18 +305,22 @@ void loop() {
       current_state = drive_to_center;
       Serial.println("found right");
     } else {
-      // Drive backward
+      // Drive right
       drive_motor(MOTOR1, 0.5, true);
       drive_motor(MOTOR3, 0.5, true);
     }
   } else if (current_state == drive_to_center) {
+    // Drive left
     drive_motor(MOTOR1, 0.5, false);
     drive_motor(MOTOR3, 0.5, false);
     delay(5000); // entirely timing based ... uggghhh
     stop_all();
     current_state = drive_forward;
+
+    // TODO:
+    // drive left, then forward before hitting box a fair bunch, then left until line is hit, then back (line following) until lined up with brick
   }
-  */
+
 
 //  Serial.print("tape: ");
 //  Serial.println(analogRead(TAPE_L));
