@@ -262,36 +262,39 @@ void loop() {
 
   // ===== State machine =====
 
-  if (current_state == starting) {
-   if (right_dist < 20 && back_dist < 20) {
-      // drive into corner
-      stop_all();
-      current_state == drive_to_corner;
-    } else {
-      spin();
-    }
-  } else if (current_state == drive_to_corner) {
+//  if (current_state == starting) {
+//   if (right_dist < 20 && back_dist < 20) {
+//      // drive into corner
+//      stop_all();
+//      current_state == drive_to_corner;
+//    } else {
+//      spin();
+//    }
+//  } else if (current_state == drive_to_corner) {
+//
+//    if (check_back_l_contact()) {
+//      stop_all();
+//    } else {
+//      // Drive backward
+//      drive_motor(MOTOR2, 0.5, false);
+//      drive_motor(MOTOR4, 0.5, false);
+//    }
+//  }
 
-    if (check_back_l_contact()) {
-      stop_all();
-    } else {
-      // Drive backward
-      drive_motor(MOTOR2, 0.5, false);
-      drive_motor(MOTOR4, 0.5, false);
-    }
-  }
- 
+  Serial.print("tape: ");
+  Serial.println(analogRead(TAPE_L));
 
-  Serial.print("analog: ");
-  Serial.print(analogRead(CONTACT_BACK_L));
-  Serial.print(" ");
 
-  Serial.print("back_l: ");
-  Serial.print(check_back_l_contact());
-  Serial.print(" right_b: ");
-  Serial.print(check_right_b_contact());
-  Serial.print(" right_f: ");
-  Serial.println(check_right_f_contact());
+  // Print contact sensors
+//  Serial.print("analog: ");
+//  Serial.print(analogRead(CONTACT_BACK_L));
+//  Serial.print(" ");
+//  Serial.print("back_l: ");
+//  Serial.print(check_back_l_contact());
+//  Serial.print(" right_b: ");
+//  Serial.print(check_right_b_contact());
+//  Serial.print(" right_f: ");
+//  Serial.println(check_right_f_contact());
 
 // To test unload:
 //  unload();
