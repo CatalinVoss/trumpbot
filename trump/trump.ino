@@ -66,14 +66,12 @@ Servo servo_lifter;
 
 enum state {
   starting,
-  unloading_chips,
-  driving_to_base,
+  driving_to_corner_back,
+  driving_to_corner_right,
+  preparing_for_center_drive,
+  driving_to_center,
   driving_to_buckets,
-  drive_to_corner_back,
-  drive_to_corner_right,
-  drive_to_center,
-  drive_forward
-  // TODO: add lots
+  unloading_chips
 };
 
 state current_state;
@@ -291,17 +289,17 @@ void loop() {
    if (right_dist < 20 && back_dist < 20) {
       // drive into corner
       stop_all();
-      current_state = drive_to_corner_back;
+      current_state = driving_to_corner_back;
       Serial.println("found correct orientation ");
     } else {
       spin();
     }
-  } else if (current_state == drive_to_corner_back) {
+  } else if (current_state == driving_to_corner_back) {
     if (check_back_l_contact()) {
       delay(500); // drive "a bit more" to make sure we're perfectly lined up -- since the sensor is just on one side
       stop_all();
       Serial.println("found back");
-      current_state = drive_to_corner_right;
+      current_state = driving_to_corner_right;
     } else {
       driveCorner();
       // To isolate the motions, uncomment:
@@ -310,11 +308,11 @@ void loop() {
       //      drive_motor(MOTOR4, 0.5, false);
             
     }
-  } else if (current_state == drive_to_corner_right) {
+  } else if (current_state == driving_to_corner_right) {
     if (check_right_b_contact() && check_right_f_contact()) {
       delay(500); // drive "a bit more" to make sure we're perfectly lined up
       stop_all();
-      current_state = drive_to_center;
+      current_state = preparing_for_center_drive;
       Serial.println("found right");
     } else {
       driveCorner();
@@ -323,36 +321,38 @@ void loop() {
       //      drive_motor(MOTOR1, 0.5, true);
       //      drive_motor(MOTOR3, 0.5, true);
     }
-  } else if (current_state == drive_to_center) {
+  } else if (current_state == preparing_for_center_drive) {
     // Drive forward
     drive_motor(MOTOR2, 0.5, true);
     drive_motor(MOTOR4, 0.5, true);
     delay(2000);
     stop_all();
-
     // Drive right to line up w corner again
     drive_motor(MOTOR1, 0.5, true);
     drive_motor(MOTOR3, 0.5, true);
     delay(500);
     stop_all();
     delay(500);
-
     // Drive left
+    // gradual speedup first to 0.3 then to 0.5
     drive_motor(MOTOR1, 0.3, false);
     drive_motor(MOTOR3, 0.3, false);
     delay(500);
-
-    drive_motor(MOTOR1, 0.5, false);
-    drive_motor(MOTOR3, 0.5, false);
-    delay(5500); // entirely timing based ... uggghhh
-    stop_all();
+    current_state = driving_to_center;
+   } else if (current_state == driving_to_center) {
+    if (check_tape_r()) {
+      stop_all();
+      current_state = driving_to_buckets;
+    } else {
+      drive_motor(MOTOR1, 0.5, false);
+      drive_motor(MOTOR3, 0.5, false);
+    }
+  } else if (current_state == driving_to_buckets) {
     
-    current_state = drive_forward;
-
-    // TODO:
-    // drive left, then forward before hitting box a fair bunch, then left until line is hit, then back (line following) until lined up with brick
   }
-  
+
+    // alt idea:
+    // drive left, then forward before hitting box a fair bunch, then left until line is hit, then back (line following) until lined up with brick
 
 
 //  Serial.print("tape: ");
