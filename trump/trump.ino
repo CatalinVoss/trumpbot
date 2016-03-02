@@ -45,7 +45,7 @@
 // Speed compensation
 #define MOTOR1_SPEED_COMP 1.0
 #define MOTOR2_SPEED_COMP 1.0
-#define MOTOR3_SPEED_COMP 0.76
+#define MOTOR3_SPEED_COMP 0.76 // 0.85
 #define MOTOR4_SPEED_COMP 0.9
 
 #define SENSOR_D_THRESH 512
@@ -71,7 +71,8 @@ enum state {
   preparing_for_center_drive,
   driving_to_center,
   driving_to_buckets,
-  unloading_chips
+  unloading_chips,
+  finished
 };
 
 state current_state;
@@ -340,7 +341,7 @@ void loop() {
     delay(500);
     current_state = driving_to_center;
    } else if (current_state == driving_to_center) {
-    if (check_tape_r()) {
+    if (check_tape_l()) {
       stop_all();
       current_state = driving_to_buckets;
     } else {
@@ -348,7 +349,18 @@ void loop() {
       drive_motor(MOTOR3, 0.5, false);
     }
   } else if (current_state == driving_to_buckets) {
-    
+    if (check_tape_l() || check_tape_r()) { // if on line
+      // Drive forward
+      drive_motor(MOTOR2, 0.5, true);
+      drive_motor(MOTOR4, 0.5, true);
+    } else {
+      stop_all();
+      current_state = unloading_chips;
+    }
+  } else if (current_state == unloading_chips) {
+    stop_all();
+    unload();
+    current_state = finished;
   }
 
     // alt idea:
