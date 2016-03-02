@@ -78,9 +78,20 @@ state current_state;
 #pragma mark -
 #pragma mark Tape sensors
 
-//bool check_tape_l() {
-//  
-//}
+// returns true iff left tape sensor is on black line
+bool check_tape_l() {
+  return (analogRead(TAPE_L) > SENSOR_D_THRESH);
+}
+
+// returns true iff right tape sensor is on black line
+bool check_tape_r() {
+  return (analogRead(TAPE_R) > SENSOR_D_THRESH);
+}
+
+// returns true iff center tape sensor is on black line
+bool check_tape_c() {
+  return (analogRead(TAPE_C) > SENSOR_D_THRESH);
+}
 
 #pragma mark -
 #pragma mark Contact
