@@ -38,9 +38,9 @@
 #define CONTACT_RIGHT_F     A3
 
 // Tape sensors
-#define TAPE_L              A0
+#define TAPE_R              A0
 #define TAPE_C              A1
-#define TAPE_R              A2
+#define TAPE_L              A2
 
 // Speed compensation
 #define MOTOR1_SPEED_COMP 1.0
@@ -223,6 +223,13 @@ void setup() {
   pinMode(SERVO_ARM_L, OUTPUT);
   pinMode(SERVO_ARM_R, OUTPUT);
   pinMode(SERVO_LIFTER, OUTPUT);
+  
+  pinMode(CONTACT_RIGHT_B, INPUT);
+  pinMode(CONTACT_BACK_L, INPUT);
+  pinMode(CONTACT_RIGHT_F, INPUT);
+  pinMode(TAPE_L, INPUT);
+  pinMode(TAPE_C, INPUT);
+  pinMode(TAPE_R, INPUT);
 
   // Enable all motors, stopped
   digitalWrite(MOTOR_EN, HIGH);
@@ -253,6 +260,8 @@ void loop() {
   delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
+  // ===== State machine =====
+
   if (current_state == starting) {
    if (right_dist < 20 && back_dist < 20) {
       // drive into corner
@@ -273,6 +282,17 @@ void loop() {
   }
  
 
+  Serial.print("analog: ");
+  Serial.print(analogRead(CONTACT_BACK_L));
+  Serial.print(" ");
+
+  Serial.print("back_l: ");
+  Serial.print(check_back_l_contact());
+  Serial.print(" right_b: ");
+  Serial.print(check_right_b_contact());
+  Serial.print(" right_f: ");
+  Serial.println(check_right_f_contact());
+
 // To test unload:
 //  unload();
 //  delay(2000);
@@ -292,11 +312,11 @@ void loop() {
 #ifdef VERBOSE
 //  Serial.println(analogRead(TAPE_L)); // this is doing *something*
   
-  Serial.print("Right ultrasonic: ");
-  Serial.print(right_dist);
-  Serial.print(" cm, Back ultrasonic: ");
-  Serial.print(back_dist);
-  Serial.println(" cm");
+//  Serial.print("Right ultrasonic: ");
+//  Serial.print(right_dist);
+//  Serial.print(" cm, Back ultrasonic: ");
+//  Serial.print(back_dist);
+//  Serial.println(" cm");
 #endif
   delay(MAIN_LOOP_DELAY);
 }
