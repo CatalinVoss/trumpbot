@@ -1,12 +1,13 @@
 /**
- * TRUMPBOT MAIN CONTROL
- */
+   TRUMPBOT MAIN CONTROL
+*/
 
 #include <Ultrasonic.h> // From ultrasonic library at http://wiki.tetrasys-design.net/HCSR04Ultrasonic
 #include <NewPing.h>    // From NewPing library at http://playground.arduino.cc/Code/NewPing
 #include <Timers.h>     // From ME 210
 #include <Servo.h>      // Standard arduino library
 #include "line_sensor.hpp"
+#include <Timers.h>
 
 #define VERBOSE
 
@@ -22,7 +23,7 @@
 #define MOTOR_EN            4   // Motor Enable
 
 // Servos
-#define SERVO_ARM_L         9  
+#define SERVO_ARM_L         9
 #define SERVO_ARM_R         10
 #define SERVO_LIFTER        2   // Lifter servo
 
@@ -38,20 +39,24 @@
 #define CONTACT_RIGHT_F     A3
 
 // Tape sensors
-#define TAPE_R              A0
+#define TAPE_R_B              A0
 #define TAPE_C              A1
-#define TAPE_L              A2
+#define TAPE_L_B              A2
+#define TAPE_R_F              A5
+#define TAPE_L_F              A3
 
 // Speed compensation
-#define MOTOR1_SPEED_COMP 1.0
+#define MOTOR1_SPEED_COMP 0.9
 #define MOTOR2_SPEED_COMP 1.0
-#define MOTOR3_SPEED_COMP 0.76 // 0.85
+#define MOTOR3_SPEED_COMP 1.0
 #define MOTOR4_SPEED_COMP 0.9
 
 #define SENSOR_D_THRESH 512
+#define SENSOR_D_THRESH_T1 850
+#define SENSOR_D_THRESH_T2 512
 
 #define MAX_DISTANCE 400 // in cm
-NewPing ultra_right(ULTRASONIC_T,ULTRASONIC_RIGHT_E, MAX_DISTANCE);
+NewPing ultra_right(ULTRASONIC_T, ULTRASONIC_RIGHT_E, MAX_DISTANCE);
 NewPing ultra_back(ULTRASONIC_T, ULTRASONIC_BACK_E, MAX_DISTANCE);
 
 // Servos
@@ -72,6 +77,8 @@ enum state {
   driving_to_center,
   driving_to_buckets,
   unloading_chips,
+  driving_to_loading,
+  Loading,
   finished
 };
 
@@ -81,18 +88,28 @@ state current_state;
 #pragma mark Tape sensors
 
 // returns true iff left tape sensor is on black line
-bool check_tape_l() {
-  return (analogRead(TAPE_L) > SENSOR_D_THRESH);
+bool check_tape_l_f() {
+  return (analogRead(TAPE_L_F) > SENSOR_D_THRESH_T1);
 }
 
 // returns true iff right tape sensor is on black line
-bool check_tape_r() {
-  return (analogRead(TAPE_R) > SENSOR_D_THRESH);
+bool check_tape_r_f() {
+  return (analogRead(TAPE_R_F) > SENSOR_D_THRESH_T1);
+}
+
+// returns true iff left tape sensor is on black line
+bool check_tape_l_b() {
+  return (analogRead(TAPE_L_B) > SENSOR_D_THRESH_T2);
+}
+
+// returns true iff right tape sensor is on black line
+bool check_tape_r_b() {
+  return (analogRead(TAPE_R_B) > SENSOR_D_THRESH_T2);
 }
 
 // returns true iff center tape sensor is on black line
 bool check_tape_c() {
-  return (analogRead(TAPE_C) > SENSOR_D_THRESH);
+  return (analogRead(TAPE_C) > SENSOR_D_THRESH_T1);
 }
 
 #pragma mark -
@@ -125,7 +142,7 @@ bool check_right_f_contact() {
 // Speed from 0 to 1
 // Forward bool
 void drive_motor(int motor, float speed, bool forward) {
-  switch(motor){ 
+  switch (motor) {
     case MOTOR1:
       speed *= MOTOR1_SPEED_COMP;
       break;
@@ -137,18 +154,18 @@ void drive_motor(int motor, float speed, bool forward) {
       break;
     case MOTOR4:
       speed *= MOTOR4_SPEED_COMP;
-      break;      
+      break;
     default:
-      break; 
+      break;
   }
-  
+
   float duty = 0;
   if (forward) {
-    duty = 0.0+(1-speed)/2.0;
+    duty = 0.0 + (1 - speed) / 2.0;
   } else {
-    duty = 1.0-(1-speed)/2.0;
+    duty = 1.0 - (1 - speed) / 2.0;
   }
-  analogWrite(motor, duty*PWM_RANGE); 
+  analogWrite(motor, duty * PWM_RANGE);
 }
 
 // Keep turning the robot
@@ -161,7 +178,7 @@ void spin() {
 
 // Servo Position Constants
 // Angle-controlled
-#define LIFTER_REST_POS    45
+//#define LIFTER_REST_POS    45
 #define LIFTER_MID_POS     60
 #define LIFTER_UNLOAD_POS  115//120
 // Speed-controlled
@@ -176,25 +193,26 @@ void spin() {
 void reset_loader() {
   servo_arm_l.write(ARM_L_REST_POS);
   servo_arm_r.write(ARM_R_REST_POS);
-  servo_lifter.write(LIFTER_REST_POS);
+  servo_lifter.write(LIFTER_MID_POS);
+  //servo_lifter.write(LIFTER_REST_POS);
   delay(500); // give the servo time to move to starting position
 }
 
 // Unloads arms (blocking code)
 void unload() {
   Serial.println("Opening arms");
-  for (int i=LIFTER_REST_POS+1; i <= LIFTER_MID_POS; i++) {
-      servo_lifter.write(i);
-      delay(25);
-  }
-  
+  //  for (int i=LIFTER_REST_POS+1; i <= LIFTER_MID_POS; i++) {
+  //      servo_lifter.write(i);
+  //      delay(25);
+  //  }
+
   // Move arms out
-  for (int i=1; i <= ARM_L_UNLOAD_POS-ARM_L_REST_POS; i++) {
-    servo_arm_l.write(ARM_L_REST_POS+i);
-    servo_arm_r.write(ARM_R_REST_POS-i);
+  for (int i = 1; i <= ARM_L_UNLOAD_POS - ARM_L_REST_POS; i++) {
+    servo_arm_l.write(ARM_L_REST_POS + i);
+    servo_arm_r.write(ARM_R_REST_POS - i);
     delay(15);
   }
-  
+
   servo_lifter.write(LIFTER_UNLOAD_POS);
   delay(SERVO_DELAY);
   delay(UNLOAD_TIME);
@@ -202,15 +220,16 @@ void unload() {
   delay(SERVO_DELAY);
 
   // Move arms in
-  for (int i=ARM_L_UNLOAD_POS-ARM_L_REST_POS; i >= 0; i--) {
-    servo_arm_l.write(ARM_L_REST_POS+i);
-    servo_arm_r.write(ARM_R_REST_POS-i);
+  for (int i = ARM_L_UNLOAD_POS - ARM_L_REST_POS; i >= 0; i--) {
+    servo_arm_l.write(ARM_L_REST_POS + i);
+    servo_arm_r.write(ARM_R_REST_POS - i);
     delay(10);
   }
-  
-  servo_lifter.write(LIFTER_REST_POS);
+
+  servo_lifter.write(LIFTER_MID_POS);
+  //servo_lifter.write(LIFTER_REST_POS);
   delay(SERVO_DELAY);
-//  reset_loader();
+  //  reset_loader();
 }
 
 void stop_all() {
@@ -230,7 +249,7 @@ void setup() {
   Serial.println("Trumping up...");
 
   // Setup pins
-  pinMode(MOTOR1, OUTPUT); 
+  pinMode(MOTOR1, OUTPUT);
   pinMode(MOTOR2, OUTPUT);
   pinMode(MOTOR3, OUTPUT);
   pinMode(MOTOR4, OUTPUT);
@@ -238,13 +257,15 @@ void setup() {
   pinMode(SERVO_ARM_L, OUTPUT);
   pinMode(SERVO_ARM_R, OUTPUT);
   pinMode(SERVO_LIFTER, OUTPUT);
-  
+
   pinMode(CONTACT_RIGHT_B, INPUT);
   pinMode(CONTACT_BACK_L, INPUT);
   pinMode(CONTACT_RIGHT_F, INPUT);
-  pinMode(TAPE_L, INPUT);
+  pinMode(TAPE_L_F, INPUT);
   pinMode(TAPE_C, INPUT);
-  pinMode(TAPE_R, INPUT);
+  pinMode(TAPE_R_F, INPUT);
+  pinMode(TAPE_L_B, INPUT);
+  pinMode(TAPE_R_B, INPUT);
 
   // Enable all motors, stopped
   digitalWrite(MOTOR_EN, HIGH);
@@ -255,6 +276,10 @@ void setup() {
   servo_arm_r.attach(SERVO_ARM_R);
   servo_lifter.attach(SERVO_LIFTER);
   reset_loader();
+
+  //starting timer
+  TMRArd_InitTimer(2,120000);
+  TMRArd_StartTimer(2);
 
   // Start state machine
   current_state = starting;
@@ -276,6 +301,58 @@ void driveCorner() {
   drive_motor(MOTOR3, 0.5, true);
 }
 
+void driveToBucket( int back_dist) {
+  Serial.println("driving to bucket ");
+  while (true) {
+    if (!check_tape_l_f() && !check_tape_r_f() && !check_tape_c()) { // else if (check_tape_l() && check_tape_r() && !check_tape_c()) { // left and right on, center off ==> detects t-line
+      // Drive forward
+      stop_all();
+      current_state = unloading_chips;
+      break;
+    } else if (!check_tape_l_f()) { // left off
+      // turn in place slightly to right if left tape sensor is off
+      drive_motor(MOTOR1, 0.5, true);
+      delay(20);
+    } else if (!check_tape_r_f()) { // right off
+      // turn in place slightly to left if left tape sensor is off
+      drive_motor(MOTOR1, 0.5, false);
+      delay(20);
+    } else if (back_dist > 50) {
+      drive_motor(MOTOR2, 0.1, true);
+      drive_motor(MOTOR4, 0.1, true);
+    } else {
+      // Drive forward
+      drive_motor(MOTOR2, 0.5, true);
+      drive_motor(MOTOR4, 0.5, true);
+    }
+  }
+}
+
+void driveToLoading(int back_dist) {
+  Serial.println("driving to loading ");
+  while (true) {
+    if (!check_tape_l_b() && !check_tape_r_b()){ //(back_dist < 40) { // else if (check_tape_l_b() && check_tape_r_b() && !check_tape_c()) { // left and right on, center off ==> detects t-line
+      // Drive forward
+      delay(100);
+      stop_all();
+      current_state = Loading;
+      break;
+    } else if (!check_tape_l_b()) { // left off
+      // turn in place slightly to right if left tape sensor is off
+      drive_motor(MOTOR3, 0.5, true);
+      delay(20);
+    } else if (!check_tape_r_b()) { // right off
+      // turn in place slightly to left if left tape sensor is off
+      drive_motor(MOTOR3, 0.5, false);
+      delay(20);
+    } else {
+      // Drive forward
+      drive_motor(MOTOR2, 0.5, false);
+      drive_motor(MOTOR4, 0.5, false);
+    }
+  }
+}
+
 // Main loop code
 void loop() {
   // ===== Measure ultrasonic =====
@@ -285,10 +362,12 @@ void loop() {
   delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
-  
   // ===== State machine =====
-  if (current_state == starting) {
-   if (right_dist < 20 && back_dist < 20) {
+  if (TMRArd_GetTime()>=120000){
+    current_state = finished;
+    stop_all(); 
+  }else if (current_state == starting) {
+    if (right_dist < 20 && back_dist < 20) {
       // drive into corner
       stop_all();
       current_state = driving_to_corner_back;
@@ -298,7 +377,7 @@ void loop() {
     }
   } else if (current_state == driving_to_corner_back) {
     if (check_back_l_contact()) {
-      delay(500); // drive "a bit more" to make sure we're perfectly lined up -- since the sensor is just on one side
+      delay(250); // drive "a bit more" to make sure we're perfectly lined up -- since the sensor is just on one side
       stop_all();
       Serial.println("found back");
       current_state = driving_to_corner_right;
@@ -308,18 +387,19 @@ void loop() {
       //      // Drive backward
       //      drive_motor(MOTOR2, 0.5, false);
       //      drive_motor(MOTOR4, 0.5, false);
-            
+
     }
   } else if (current_state == driving_to_corner_right) {
-    if (check_right_b_contact() && check_right_f_contact()) {
-      delay(500); // drive "a bit more" to make sure we're perfectly lined up
+    if (check_right_f_contact()) {
+      delay(250); // drive "a bit more" to make sure we're perfectly lined up
       stop_all();
       current_state = preparing_for_center_drive;
       Serial.println("found right");
     } else {
+      Serial.println("driving to corner to find right");
       driveCorner();
       // To isolate the motions, uncomment:
-      //       // Drive right
+      //      // Drive right
       //      drive_motor(MOTOR1, 0.5, true);
       //      drive_motor(MOTOR3, 0.5, true);
     }
@@ -327,111 +407,68 @@ void loop() {
     // Drive forward
     drive_motor(MOTOR2, 0.5, true);
     drive_motor(MOTOR4, 0.5, true);
-    delay(2000);
-    stop_all();
-    // Drive right to line up w corner again
-    drive_motor(MOTOR1, 0.5, true);
-    drive_motor(MOTOR3, 0.5, true);
-    delay(500);
-    stop_all();
-    delay(500);
-    // Drive left
-    // gradual speedup first to 0.3 then to 0.5
-    drive_motor(MOTOR1, 0.3, false);
-    drive_motor(MOTOR3, 0.3, false);
-    delay(500);
-    current_state = driving_to_center;
-   } else if (current_state == driving_to_center) {
-    if (check_tape_l()) {
+    //delay(1300); //delay(2000);
+    if (back_dist > 30) { 
+      stop_all();
+      // Drive right to line up w corner again
+      drive_motor(MOTOR1, 0.5, true);
+      drive_motor(MOTOR3, 0.5, true);
+      delay(250); 
+      stop_all();
+      delay(100); //delay(500);
+      // Drive left
+      // gradual speedup first to 0.3 then to 0.5
+      drive_motor(MOTOR1, 0.3, false);
+      drive_motor(MOTOR3, 0.3, false);
+      delay(100); //delay(500);
+      current_state = driving_to_center;
+    }
+  } else if (current_state == driving_to_center) {
+    //if (right_dist>91) {
+    if (check_tape_l_f()) {
       stop_all();
       current_state = driving_to_buckets;
+      drive_motor(MOTOR2, 0.5, true);
+      drive_motor(MOTOR4, 0.5, true);
+      delay(500);
+    } else if (right_dist > 100) {
+      drive_motor(MOTOR1, 0.3, false);
+      drive_motor(MOTOR3, 0.3, false);
     } else {
       drive_motor(MOTOR1, 0.5, false);
       drive_motor(MOTOR3, 0.5, false);
     }
   } else if (current_state == driving_to_buckets) {
-    bool hacked = false;
-    while (true) {
-      if (hacked && !check_tape_l() && !check_tape_r() && !check_tape_c()) { // else if (check_tape_l() && check_tape_r() && !check_tape_c()) { // left and right on, center off ==> detects t-line
-        // Drive forward
-        stop_all();
-        current_state = unloading_chips;
-        break;
-      } else if (!check_tape_l()) { // left off
-        hacked = true;
-        // turn in place slightly to right if left tape sensor is off
-        drive_motor(MOTOR1, 0.5, true);
-        delay(50);
-      } else if (!check_tape_r()) { // right off
-        hacked = true;
-        // turn in place slightly to left if left tape sensor is off
-        drive_motor(MOTOR1, 0.5, false);
-        delay(50);
-      } else {
-//        hacked = true;
-        // Drive forward
-        drive_motor(MOTOR2, 0.5, true);
-        drive_motor(MOTOR4, 0.5, true);
-      }
-    }
-    
-    
-//    if (check_tape_l() || check_tape_r()) { // if on line
-//      // Drive forward
-//      drive_motor(MOTOR2, 0.5, true);
-//      drive_motor(MOTOR4, 0.5, true);
-//    } else {
-//      stop_all();
-//      current_state = unloading_chips;
-//    }
-    
-    
+    driveToBucket(back_dist);
   } else if (current_state == unloading_chips) {
-    stop_all();
     unload();
-    current_state = finished;
+    current_state = driving_to_loading;
+    drive_motor(MOTOR2, 0.5, false);
+    drive_motor(MOTOR4, 0.5, false);
+    delay(500);
+  } else if (current_state == driving_to_loading) {
+    driveToLoading(back_dist);
+  } else if (current_state == Loading) {
+    delay(3000);
+    current_state = driving_to_buckets;
+    drive_motor(MOTOR2, 0.5, true);
+    drive_motor(MOTOR4, 0.5, true);
+    delay(500);
   }
-
-    // alt idea:
-    // drive left, then forward before hitting box a fair bunch, then left until line is hit, then back (line following) until lined up with brick
-
-
-//  Serial.print("tape: ");
-//  Serial.println(analogRead(TAPE_L));
-
-//  Serial.print("tape readings L: ");
-//  Serial.print(check_tape_l());
-//  Serial.print(" C: ");
-//  Serial.print(check_tape_c());
-//  Serial.print(" R: ");
-//  Serial.print(check_tape_r());
-//  Serial.println(" ");
-
-  // Print contact sensors
-//  Serial.print("analog: ");
-//  Serial.print(analogRead(CONTACT_BACK_L));
-//  Serial.print(" ");
-//  Serial.print("back_l: ");
-//  Serial.print(check_back_l_contact());
-//  Serial.print(" right_b: ");
-//  Serial.print(check_right_b_contact());
-//  Serial.print(" right_f: ");
-//  Serial.println(check_right_f_contact());
-
-// To test unload:
-//  unload();
-//  delay(2000);
-
-
-#ifdef VERBOSE
-//  Serial.println(analogRead(TAPE_L)); // this is doing *something*
   
-//  Serial.print("Right ultrasonic: ");
-//  Serial.print(right_dist);
-//  Serial.print(" cm, Back ultrasonic: ");
-//  Serial.print(back_dist);
-//  Serial.println(" cm");
-#endif
-  delay(MAIN_LOOP_DELAY);
+  delay(MAIN_LOOP_DELAY); 
+
+  
+//  Serial.println("check_tape_l_b");
+//  Serial.println(check_tape_l_b());
+//  Serial.println("check_tape_r_b");
+//  Serial.println(check_tape_r_b());
+//  Serial.println("check_tape_l_f");
+//  Serial.println(check_tape_l_f());
+//  Serial.println("check_tape_r_f");
+//  Serial.println(check_tape_r_f());
+//  Serial.println("check_tape_c");
+//  Serial.println(check_tape_c());
+//  delay(1000);
 }
 
