@@ -53,7 +53,7 @@
 
 #define SENSOR_D_THRESH 512
 #define SENSOR_D_THRESH_T1 850
-#define SENSOR_D_THRESH_T2 512
+#define SENSOR_D_THRESH_T2 312
 
 #define MAX_DISTANCE 400 // in cm
 NewPing ultra_right(ULTRASONIC_T, ULTRASONIC_RIGHT_E, MAX_DISTANCE);
@@ -77,6 +77,9 @@ enum state {
   driving_to_center,
   driving_to_buckets,
   unloading_chips,
+  move_left_bucket,
+  unloading_chips_l_side,
+  move_right_center_line,
   driving_to_loading,
   Loading,
   finished
@@ -301,50 +304,70 @@ void driveCorner() {
   drive_motor(MOTOR3, 0.5, true);
 }
 
-void driveToBucket( int back_dist) {
-  Serial.println("driving to bucket ");
+void driveToBucket(long time) {
+  Serial.println("time, we are driving to bucket");
+  Serial.println(time);
   while (true) {
+    int back_dist = ultra_back.ping() / US_ROUNDTRIP_CM;
     if (!check_tape_l_f() && !check_tape_r_f() && !check_tape_c()) { // else if (check_tape_l() && check_tape_r() && !check_tape_c()) { // left and right on, center off ==> detects t-line
       // Drive forward
       stop_all();
-      current_state = unloading_chips;
+      if(time<105000){
+        current_state = unloading_chips;
+      }else {
+        current_state = move_left_bucket;
+        Serial.println("state set to move_left_bucket");
+        Serial.println("moving a little back");
+        drive_motor(MOTOR2, 0.3, false);
+        drive_motor(MOTOR4, 0.3, false);
+        delay(400);
+        stop_all();
+      }
       break;
     } else if (!check_tape_l_f()) { // left off
       // turn in place slightly to right if left tape sensor is off
-      drive_motor(MOTOR1, 0.5, true);
-      delay(20);
+      drive_motor(MOTOR1, 0.6, true);
+      delay(30);
+      drive_motor(MOTOR1, 0, true);
     } else if (!check_tape_r_f()) { // right off
       // turn in place slightly to left if left tape sensor is off
-      drive_motor(MOTOR1, 0.5, false);
-      delay(20);
-    } else if (back_dist > 50) {
-      drive_motor(MOTOR2, 0.1, true);
-      drive_motor(MOTOR4, 0.1, true);
+      drive_motor(MOTOR1, 0.6, false);
+      delay(30);
+      drive_motor(MOTOR1, 0.5, true);
+    } else if (back_dist > 70) {
+      drive_motor(MOTOR2, 0.3, true);
+      drive_motor(MOTOR4, 0.3, true);
     } else {
       // Drive forward
-      drive_motor(MOTOR2, 0.5, true);
-      drive_motor(MOTOR4, 0.5, true);
+      drive_motor(MOTOR2, 0.6, true);
+      drive_motor(MOTOR4, 0.6, true);
     }
   }
 }
 
-void driveToLoading(int back_dist) {
-  Serial.println("driving to loading ");
+
+void driveToLoading() {
+  Serial.println("in drive to loading");
   while (true) {
     if (!check_tape_l_b() && !check_tape_r_b()){ //(back_dist < 40) { // else if (check_tape_l_b() && check_tape_r_b() && !check_tape_c()) { // left and right on, center off ==> detects t-line
       // Drive forward
       delay(100);
       stop_all();
       current_state = Loading;
+      Serial.println("drive to loading stopped b sensor l than r");
+      Serial.println(check_tape_l_b() );
+      Serial.println(check_tape_r_b());
       break;
     } else if (!check_tape_l_b()) { // left off
       // turn in place slightly to right if left tape sensor is off
       drive_motor(MOTOR3, 0.5, true);
-      delay(20);
+      delay(30);
+      drive_motor(MOTOR3, 0, false);
     } else if (!check_tape_r_b()) { // right off
       // turn in place slightly to left if left tape sensor is off
       drive_motor(MOTOR3, 0.5, false);
-      delay(20);
+      delay(30);
+      drive_motor(MOTOR3, 0, false);
     } else {
       // Drive forward
       drive_motor(MOTOR2, 0.5, false);
@@ -355,6 +378,8 @@ void driveToLoading(int back_dist) {
 
 // Main loop code
 void loop() {
+
+
   // ===== Measure ultrasonic =====
   int back_dist = ultra_back.ping() / US_ROUNDTRIP_CM;
   // This delay is crucial! Triggering them 1 by 1 otherwise causes interference.
@@ -362,8 +387,12 @@ void loop() {
   delay(10);
   int right_dist = ultra_right.ping() / US_ROUNDTRIP_CM;
 
+  long time =TMRArd_GetTime();
+
   // ===== State machine =====
-  if (TMRArd_GetTime()>=120000){
+  if (time>=120000){
+    Serial.println("timer up ");
+    Serial.println(time);
     current_state = finished;
     stop_all(); 
   }else if (current_state == starting) {
@@ -405,14 +434,14 @@ void loop() {
     }
   } else if (current_state == preparing_for_center_drive) {
     // Drive forward
-    drive_motor(MOTOR2, 0.5, true);
-    drive_motor(MOTOR4, 0.5, true);
+    drive_motor(MOTOR2, 0.6, true);
+    drive_motor(MOTOR4, 0.6, true);
     //delay(1300); //delay(2000);
     if (back_dist > 30) { 
       stop_all();
       // Drive right to line up w corner again
-      drive_motor(MOTOR1, 0.5, true);
-      drive_motor(MOTOR3, 0.5, true);
+      drive_motor(MOTOR1, 0.6, true);
+      drive_motor(MOTOR3, 0.6, true);
       delay(250); 
       stop_all();
       delay(100); //delay(500);
@@ -428,31 +457,62 @@ void loop() {
     if (check_tape_l_f()) {
       stop_all();
       current_state = driving_to_buckets;
-      drive_motor(MOTOR2, 0.5, true);
-      drive_motor(MOTOR4, 0.5, true);
+      drive_motor(MOTOR2, 0.6, true);
+      drive_motor(MOTOR4, 0.6, true);
       delay(500);
-    } else if (right_dist > 100) {
+    } else if (right_dist > 80) {
       drive_motor(MOTOR1, 0.3, false);
       drive_motor(MOTOR3, 0.3, false);
     } else {
-      drive_motor(MOTOR1, 0.5, false);
-      drive_motor(MOTOR3, 0.5, false);
+      drive_motor(MOTOR1, 0.6, false);
+      drive_motor(MOTOR3, 0.6, false);
     }
   } else if (current_state == driving_to_buckets) {
-    driveToBucket(back_dist);
+    Serial.println("driving to bucket ");
+    driveToBucket(time);
+  }else if( current_state == move_left_bucket){
+    Serial.println("move to left bucket ");
+    //moveLeft();
+    drive_motor(MOTOR1, 0.6, false);
+    drive_motor(MOTOR3, 0.6, false);
+    delay(1400);
+    current_state = unloading_chips_l_side;
+    stop_all();
+  }else if( current_state ==unloading_chips_l_side){
+    Serial.println("unload chip left side ");
+    unload();
+    current_state = move_right_center_line;
+    //move back a little so that when drivibg left we will hit center line
+    drive_motor(MOTOR2, 0.6, false);
+    drive_motor(MOTOR4, 0.6, false);
+    delay(400);
+    stop_all();
+  } else if (current_state == move_right_center_line) {
+    Serial.println("move back to center line ");
+    //drive left to center line
+    if (!check_tape_r_f()){
+      drive_motor(MOTOR1, 0.6, true);
+      drive_motor(MOTOR3, 0.6, true);
+    }else{
+      stop_all();
+      current_state = driving_to_loading;
+    }
   } else if (current_state == unloading_chips) {
+    Serial.println("unloading ");
     unload();
     current_state = driving_to_loading;
-    drive_motor(MOTOR2, 0.5, false);
-    drive_motor(MOTOR4, 0.5, false);
+    drive_motor(MOTOR2, 0.6, false);
+    drive_motor(MOTOR4, 0.6, false);
     delay(500);
   } else if (current_state == driving_to_loading) {
-    driveToLoading(back_dist);
+    Serial.println("driving to loading ");
+    driveToLoading();
   } else if (current_state == Loading) {
-    delay(3000);
+    Serial.println("loading ");
+    delay(3500);
     current_state = driving_to_buckets;
-    drive_motor(MOTOR2, 0.5, true);
-    drive_motor(MOTOR4, 0.5, true);
+    drive_motor(MOTOR2, 0.6, true);
+    drive_motor(MOTOR4, 0.6, true);
     delay(500);
   }
   
